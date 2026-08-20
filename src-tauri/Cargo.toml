@@ -1,0 +1,58 @@
+[package]
+name = "deskfolder"
+version = "0.1.0"
+description = "Mobile-style app folders for the Windows desktop"
+authors = ["Ayush Singh <https://github.com/i-ayushsingh>"]
+homepage = "https://github.com/i-ayushsingh/Deskfolder"
+repository = "https://github.com/i-ayushsingh/Deskfolder"
+license = "MIT"
+edition = "2021"
+rust-version = "1.77.2"
+
+# Hidden console on Windows release builds — the app runs in the tray.
+[lib]
+name = "deskfolder_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.5", features = ["tray-icon", "image-png", "image-ico", "protocol-asset"] }
+tauri-plugin-single-instance = "2.0.1"
+tauri-plugin-dialog = "2.7.1"
+window-vibrancy = "0.6.0"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+
+# Serialization
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+
+# .lnk shortcut generation (Phase 2)
+lnks = "0.2.0"
+
+# UUID generation
+uuid = { version = "1.10", features = ["v4", "fast-rng"] }
+image = { version = "0.25", default-features = false, features = ["png", "ico"] }
+
+# Mouse position, monitor info, high DPI, icon extraction
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58.0", features = [
+  "Win32_Foundation",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_HiDpi",
+  "Win32_Graphics_Gdi",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Com",
+  "Win32_System_Registry",
+  "Win32_System_Variant",
+  "Win32_UI_Accessibility",
+  "Win32_UI_Shell",
+  "Win32_Storage_FileSystem",
+] }
+
+[profile.release]
+opt-level = 2
+codegen-units = 16
+lto = false
+strip = true

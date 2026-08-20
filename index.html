@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      NOTE: This page is loaded inside a Tauri WebView.
+      The actual chrome (window frame, transparency, etc.) is controlled by tauri.conf.json.
+      In overlay mode the body must remain fully transparent so the borderless
+      WebView can show through to the Windows desktop.
+    -->
+    <title>DeskFolder</title>
+    <link rel="icon" type="image/png" href="/logo.png" />
+  </head>
+  <body class="font-fluent antialiased bg-transparent">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g. v0.1.0)'
+        required: false
+        default: 'v0.1.0'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'windows-latest'
+            args: '--bundles nsis,msi'
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Determine tag name
+        id: tag_info
+        shell: bash
+        run: |
+          if [ -n "${{ github.ref_name }}" ] && [[ "${{ github.ref_name }}" == v* ]]; then
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            echo "tag=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=v0.1.0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and Release Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ steps.tag_info.outputs.tag }}
+          releaseName: 'DeskFolder ${{ steps.tag_info.outputs.tag }}'
+          releaseBody: |
+            ## DeskFolder ${{ steps.tag_info.outputs.tag }}
+            
+            Mobile-style floating app folders for the Windows desktop.
+            
+            ### ✨ Highlights
+            - 🚀 **Mobile-Style Popovers**: Smooth, floating acrylic app groups on your desktop.
+            - ⚡ **Instant Launching**: Single-click to launch any application directly.
+            - 🎨 **Windows 11 Native Fluent Dark Theme**: Real DWM acrylic blur & native drop shadows.
+            - 🔍 **Instant Search & Filter**: Real-time filtering in both popovers and group editor.
+            - 📂 **Multi-Source Add**: Add from Start Menu scan, Explorer drag & drop, clipboard paste, or group-to-group copy.
+            - 🖼️ **Real High-Res Icons**: Automatic Win32 32-bit icon extraction and high-DPI scaling.
+            - 📦 **Atomic Persistence & Backup**: Export / import JSON backups with 1-click recovery.
+            
+            ### 📥 Download Installer
+            - **NSIS Setup Installer**: `DeskFolder_..._x64-setup.exe` (Recommended - includes auto-uninstaller with app logo)
+            - **MSI Windows Installer**: `DeskFolder_..._x64_en-US.msi`
+          releaseDraft: false
+          prerelease: true
+          args: ${{ matrix.args }}
